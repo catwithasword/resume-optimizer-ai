@@ -1,39 +1,17 @@
-export interface Education {
-  id: string;
-  institution: string;
-  degree: string;
-  startDate: string;
-  endDate: string;
-  description?: string;
-}
-
-export interface Experience {
-  id: string;
-  company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  description?: string;
-}
-
-export interface Skill {
-  id: string;
-  name: string;
-  level: string; // e.g., Beginner, Intermediate, Expert
-}
-
 export interface ResumeData {
-  personalInfo: {
-    fullName: string;
-    email: string;
-    phone?: string;
-    address?: string;
-    website?: string;
-    summary?: string;
-  };
-  education: Education[];
-  experience: Experience[];
-  skills: Skill[];
+  name: string;
+  address: string;
+  phone_number: string;
+  email: string;
+  links: string[];
+  profile: string; // Summary
+  education: string[];
+  experience: string[];
+  skills: string[];
+  achievements_awards: string[];
+  certificates_and_training: string[];
+  extracurricular_or_volunteer_experience: string[];
+  references: string[];
 }
 
 export interface OptimizationResult {

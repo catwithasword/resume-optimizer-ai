@@ -14,11 +14,10 @@ import { Trash2, Plus } from 'lucide-react';
 
 const educationSchema = z.object({
     education: z.array(z.object({
-        id: z.string(),
         institution: z.string().min(1, "Institution is required"),
         degree: z.string().min(1, "Degree is required"),
-        startDate: z.string(),
-        endDate: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
         description: z.string().optional(),
     }))
 });
@@ -29,9 +28,39 @@ export function EducationForm() {
     const resumeData = useResumeStore((state) => state.resumeData);
     const updateResumeData = useResumeStore((state) => state.updateResumeData);
 
+    // Heuristic Parser
+    const parseEducation = (eduStr: string) => {
+        const parts = eduStr.split('|').map(s => s.trim());
+        const dateRange = parts[2] || '';
+        const [startDate, endDate] = dateRange.split(' to ').map(d => d.trim());
+
+        return {
+            institution: parts[0] || '',
+            degree: parts[1] || '',
+            startDate: startDate || '',
+            endDate: endDate || '',
+            description: parts.slice(3).join(' | ') // Join remaining parts as description/details
+        };
+    };
+
+    // Formatter
+    const formatEducation = (edu: any) => {
+        const dateRange = (edu.startDate || edu.endDate) ? `${edu.startDate || ''} to ${edu.endDate || ''}` : '';
+        const parts = [
+            edu.institution,
+            edu.degree,
+            dateRange,
+            edu.description
+        ].filter(Boolean); // Remove empty strings
+
+        return parts.join(' | ');
+    };
+
     const form = useForm<EducationValues>({
         resolver: zodResolver(educationSchema),
-        defaultValues: { education: resumeData?.education || [] },
+        defaultValues: {
+            education: resumeData?.education?.map(parseEducation) || []
+        },
     });
 
     const { fields, append, remove } = useFieldArray({
@@ -42,17 +71,26 @@ export function EducationForm() {
     useEffect(() => {
         if (resumeData?.education) {
             const currentEducation = form.getValues().education;
-            // Only update if there's a difference to avoid infinite loops
-            if (JSON.stringify(resumeData.education) !== JSON.stringify(currentEducation)) {
-                form.setValue("education", resumeData.education);
+            const parsedEducation = resumeData.education.map(parseEducation);
+
+            // Deep comparison or just simple length mismatch + fast check to avoid loops
+            // For simplicity, we just check length or basic properties. 
+            // Better: Compare JSON stringified versions
+            if (JSON.stringify(parsedEducation) !== JSON.stringify(currentEducation)) {
+                // Warning: reset() here might be too aggressive if user is typing, 
+                // but since store update happens on effect, we strictly sync 1 way usually
+                // or use onBlur to update store.
+                // For now, let's just initialize. 
+                // Ideally, we don't reset while editing.
+                // form.reset({ education: parsedEducation }); 
             }
         }
-    }, [resumeData?.education, form]);
+    }, [resumeData?.education]); // simplified dependency
 
     useEffect(() => {
         const subscription = form.watch((value) => {
-            // @ts-ignore
-            updateResumeData({ education: value.education });
+            const formattedEducation = value.education?.map(formatEducation) || [];
+            updateResumeData({ education: formattedEducation });
         });
         return () => subscription.unsubscribe();
     }, [form.watch, updateResumeData]);
@@ -61,22 +99,25 @@ export function EducationForm() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Education</CardTitle>
-                <Button size="sm" onClick={() => append({ id: crypto.randomUUID(), institution: '', degree: '', startDate: '', endDate: '', description: '' })}>
+                <Button size="sm" onClick={() => append({ institution: '', degree: '', startDate: '', endDate: '', description: '' })}>
                     <Plus className="h-4 w-4 mr-2" /> Add Education
                 </Button>
             </CardHeader>
             <CardContent className="space-y-6">
                 <form className="space-y-6">
                     {fields.map((field, index) => (
-                        <div key={field.id} className="relative border p-4 rounded-lg space-y-4">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-2 right-2 text-destructive hover:bg-destructive/10"
-                                onClick={() => remove(index)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                        <div key={field.id} className="border p-4 rounded-lg space-y-4">
+                            <div className="flex justify-end mb-2">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:bg-destructive/10"
+                                    onClick={() => remove(index)}
+                                    type="button"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -91,18 +132,18 @@ export function EducationForm() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Start Date</Label>
-                                    <Input type="date" {...form.register(`education.${index}.startDate`)} />
+                                    <Label>Start Date (YYYY-MM)</Label>
+                                    <Input {...form.register(`education.${index}.startDate`)} placeholder="2019-08" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>End Date</Label>
-                                    <Input type="date" {...form.register(`education.${index}.endDate`)} />
+                                    <Label>End Date (YYYY-MM)</Label>
+                                    <Input {...form.register(`education.${index}.endDate`)} placeholder="2023-05" />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Description</Label>
-                                <Textarea {...form.register(`education.${index}.description`)} className="min-h-[80px]" />
+                                <Label>Details (GPA, Coursework)</Label>
+                                <Textarea {...form.register(`education.${index}.description`)} className="min-h-[80px]" placeholder="GPA: 3.7 | Coursework: ..." />
                             </div>
                         </div>
                     ))}
