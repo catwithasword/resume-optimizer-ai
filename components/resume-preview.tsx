@@ -26,10 +26,9 @@ export function ResumePreview() {
             }
             /* Reset any conflicting styles */
             html, body {
-                height: 100vh !important;
+                height: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                overflow: hidden !important;
             }
             .resume-document {
                 transform: none !important;
