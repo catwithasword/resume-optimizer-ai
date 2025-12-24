@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,8 @@ export function ResumePreview() {
     const layout = useResumeStore((state) => state.layout);
     const updateLayout = useResumeStore((state) => state.updateLayout);
     const contentRef = useRef<HTMLDivElement>(null);
+    const [numPages, setNumPages] = useState<number>(1);
+
     const pageStyle = `
         @page {
             size: A4;
@@ -36,12 +38,30 @@ export function ResumePreview() {
         }
     `;
 
+    // Calculate number of pages based on content height
+    useEffect(() => {
+        if (!contentRef.current) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                // A4 height in pixels (96 DPI) is approx 1122.5px
+                const a4HeightPx = 1122.5;
+                const contentHeight = entry.contentRect.height;
+                // At least 1 page, round up
+                const pages = Math.ceil(contentHeight / a4HeightPx) || 1;
+                setNumPages(pages);
+            }
+        });
+
+        observer.observe(contentRef.current);
+        return () => observer.disconnect();
+    }, []);
+
     const reactToPrintFn = useReactToPrint({
         contentRef,
         documentTitle: `Resume - ${resumeData?.name || 'Draft'}`,
         pageStyle: pageStyle,
     });
-
 
     if (!resumeData) {
         return (
@@ -91,6 +111,7 @@ export function ResumePreview() {
 
     return (
         <Card className="h-full flex flex-col">
+            {/* ... layout controls container ... */}
             <div className="p-4 border-b space-y-4 bg-muted/30">
                 <div className="flex justify-between items-center">
                     <h3 className="font-semibold">Live Preview</h3>
@@ -102,6 +123,7 @@ export function ResumePreview() {
 
                 {/* Layout Controls */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    {/* ... sliders ... */}
                     <div className="space-y-2">
                         <div className="flex justify-between">
                             <Label>Font Size: {layout?.fontSize || 10}pt</Label>
@@ -161,18 +183,41 @@ export function ResumePreview() {
                     style={{
                         transform: `scale(${(layout?.zoom || 100) / 100})`,
                         transformOrigin: 'top center',
-                        transition: 'transform 0.2s ease-in-out'
+                        transition: 'transform 0.2s ease-in-out',
+                        position: 'relative' // Needed for absolute bg positioning context? No, strictly resume container
                     }}
                 >
-                    {/* Harvard Style Template - A4 Paper */}
+                    {/* Background Pages Layer */}
+                    <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center print:hidden z-0">
+                        {Array.from({ length: Math.max(numPages, 1) }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="w-[210mm] h-[297mm] bg-white shadow-2xl relative"
+                            >
+                                {/* Page Break Marker (except for last page) */}
+                                {i < numPages - 1 && (
+                                    <div className="absolute bottom-0 w-full border-b-2 border-dashed border-gray-300 print:hidden">
+                                        <span className="absolute right-2 bottom-1 text-[10px] text-gray-400 font-sans">
+                                            Page Break
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Harvard Style Template - A4 Paper overlay */}
                     <div
                         ref={contentRef}
-                        className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] bg-white shadow-2xl print:shadow-none print:min-h-[296mm] print:h-auto text-black font-serif box-border resume-document"
+                        className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] text-black font-serif box-border resume-document relative z-10 print:bg-white"
                         style={{
                             pageBreakAfter: 'auto',
                             padding: `${layout?.margin || 15}mm`,
                             fontSize: `${layout?.fontSize || 10}pt`,
-                            lineHeight: layout?.lineHeight || 1.2
+                            lineHeight: layout?.lineHeight || 1.2,
+                            // content flows continuously, ignoring gaps
+                            backgroundColor: 'transparent', // transparent to show background pages
+                            minHeight: `${numPages * 297}mm` // Force container to be at least as tall as the pages
                         }}
                     >
                         {/* Header */}
@@ -216,7 +261,7 @@ export function ResumePreview() {
                                     {education.map((eduStr, i) => {
                                         const { institution, degree, date, details } = parseEducation(eduStr);
                                         return (
-                                            <div key={i}>
+                                            <div key={i} className="break-inside-avoid">
                                                 <div className="flex justify-between items-baseline">
                                                     <h3 className="font-bold">{institution}</h3>
                                                     <span className="">{date}</span>
@@ -244,7 +289,7 @@ export function ResumePreview() {
                                     {experience.map((expStr, i) => {
                                         const { titleAndCompany, date, description } = parseExperience(expStr);
                                         return (
-                                            <div key={i}>
+                                            <div key={i} className="break-inside-avoid">
                                                 <div className="flex justify-between items-baseline">
                                                     <h3 className="font-bold">{titleAndCompany}</h3>
                                                     <span className="">{date}</span>
@@ -267,7 +312,7 @@ export function ResumePreview() {
                                 <h2 className="font-bold uppercase border-b border-black mb-3">Achievements & Awards</h2>
                                 <div className="space-y-1">
                                     {achievements_awards.map((ach, i) => (
-                                        <div key={i} className="flex gap-2">
+                                        <div key={i} className="flex gap-2 break-inside-avoid">
                                             <span>• {ach}</span>
                                         </div>
                                     ))}
@@ -281,7 +326,7 @@ export function ResumePreview() {
                                 <h2 className="font-bold uppercase border-b border-black mb-3">Certificates</h2>
                                 <div className="space-y-1">
                                     {certificates_and_training.map((cert, i) => (
-                                        <div key={i} className="flex gap-2">
+                                        <div key={i} className="flex gap-2 break-inside-avoid">
                                             <span>• {cert}</span>
                                         </div>
                                     ))}
@@ -295,7 +340,7 @@ export function ResumePreview() {
                                 <h2 className="font-bold uppercase border-b border-black mb-3">Volunteering</h2>
                                 <div className="space-y-1">
                                     {extracurricular_or_volunteer_experience.map((vol, i) => (
-                                        <div key={i}>
+                                        <div key={i} className="break-inside-avoid">
                                             <p>{vol}</p>
                                         </div>
                                     ))}
@@ -307,7 +352,7 @@ export function ResumePreview() {
                         {skills && skills.length > 0 && (
                             <section className="mt-4">
                                 <h2 className="font-bold uppercase border-b border-black mb-3">Skills</h2>
-                                <div>
+                                <div className="break-inside-avoid">
                                     <span className="font-bold">Skills: </span>
                                     {skills.map((skill, index) => (
                                         <span key={index}>
@@ -325,7 +370,7 @@ export function ResumePreview() {
                                 <h2 className="font-bold uppercase border-b border-black mb-3">References</h2>
                                 <div className="space-y-1">
                                     {references.map((ref, i) => (
-                                        <div key={i}>
+                                        <div key={i} className="break-inside-avoid">
                                             <p>{ref}</p>
                                         </div>
                                     ))}
