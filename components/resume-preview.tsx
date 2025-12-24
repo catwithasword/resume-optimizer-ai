@@ -26,9 +26,10 @@ export function ResumePreview() {
             }
             /* Reset any conflicting styles */
             html, body {
-                height: auto !important;
+                height: 100vh !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                overflow: hidden !important;
             }
         }
     `;
@@ -145,7 +146,7 @@ export function ResumePreview() {
                     {/* Harvard Style Template - A4 Paper */}
                     <div
                         ref={contentRef}
-                        className="w-[210mm] min-h-[297mm] bg-white shadow-2xl print:shadow-none print:min-h-0 print:h-auto text-black font-serif box-border"
+                        className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] bg-white shadow-2xl print:shadow-none print:min-h-[296mm] print:h-auto text-black font-serif box-border"
                         style={{
                             pageBreakAfter: 'auto',
                             padding: `${layout?.margin || 15}mm`,
