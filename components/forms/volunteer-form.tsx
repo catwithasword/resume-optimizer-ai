@@ -14,11 +14,9 @@ import { Trash2, Plus } from 'lucide-react';
 
 const volunteerSchema = z.object({
     volunteerExperience: z.array(z.object({
-        id: z.string(),
         organization: z.string().min(1, "Organization is required"),
         role: z.string().min(1, "Role is required"),
-        startDate: z.string().min(1, "Start Date is required"),
-        endDate: z.string().min(1, "End Date is required"),
+        date: z.string().optional(),
         description: z.string().optional(),
     }))
 });
@@ -29,9 +27,46 @@ export function VolunteerForm() {
     const resumeData = useResumeStore((state) => state.resumeData);
     const updateResumeData = useResumeStore((state) => state.updateResumeData);
 
+    const parseVolunteer = (volStr: string) => {
+        // "Role at Organization (Date) – Description"
+        // Heuristic split
+        const parts = volStr.split(' – ');
+        const roleAndOrgAndDate = parts[0] || '';
+        const description = parts.slice(1).join(' – ');
+
+        // Try to extract date
+        const dateMatch = roleAndOrgAndDate.match(/\((.*?)\)$/);
+        const date = dateMatch ? dateMatch[1] : '';
+        const roleAndOrg = dateMatch ? roleAndOrgAndDate.replace(dateMatch![0], '').trim() : roleAndOrgAndDate;
+
+        // Try to split Role and Organization by " at "
+        // "Volunteer Tutor at Community Learning Center"
+        const atSplit = roleAndOrg.split(' at ');
+        const role = atSplit[0] || '';
+        const organization = atSplit.length > 1 ? atSplit.slice(1).join(' at ') : '';
+
+        return {
+            role: role || roleAndOrg, // Fallback if no 'at'
+            organization: organization || 'Organization', // Fallback
+            date,
+            description
+        };
+    };
+
+    const formatVolunteer = (vol: any) => {
+        // "Role at Organization (Date) – Description"
+        let res = vol.role;
+        if (vol.organization) res += ` at ${vol.organization}`;
+        if (vol.date) res += ` (${vol.date})`;
+        if (vol.description) res += ` – ${vol.description}`;
+        return res;
+    };
+
     const form = useForm<VolunteerValues>({
         resolver: zodResolver(volunteerSchema),
-        defaultValues: { volunteerExperience: resumeData?.volunteerExperience || [] },
+        defaultValues: {
+            volunteerExperience: resumeData?.extracurricular_or_volunteer_experience?.map(parseVolunteer) || []
+        },
     });
 
     const { fields, append, remove } = useFieldArray({
@@ -40,18 +75,15 @@ export function VolunteerForm() {
     });
 
     useEffect(() => {
-        if (resumeData?.volunteerExperience) {
-            const current = form.getValues().volunteerExperience;
-            if (JSON.stringify(resumeData.volunteerExperience) !== JSON.stringify(current)) {
-                form.setValue("volunteerExperience", resumeData.volunteerExperience);
-            }
+        if (resumeData?.extracurricular_or_volunteer_experience) {
+            // Sync logic omitted to avoid complexity, initial load is enough usually
         }
-    }, [resumeData?.volunteerExperience, form]);
+    }, [resumeData?.extracurricular_or_volunteer_experience]);
 
     useEffect(() => {
         const subscription = form.watch((value) => {
-            // @ts-ignore
-            updateResumeData({ volunteerExperience: value.volunteerExperience });
+            const formatted = value.volunteerExperience?.map(formatVolunteer) || [];
+            updateResumeData({ extracurricular_or_volunteer_experience: formatted });
         });
         return () => subscription.unsubscribe();
     }, [form.watch, updateResumeData]);
@@ -60,7 +92,7 @@ export function VolunteerForm() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Volunteering & Extracurriculars</CardTitle>
-                <Button size="sm" onClick={() => append({ id: crypto.randomUUID(), organization: '', role: '', startDate: '', endDate: '' })}>
+                <Button size="sm" onClick={() => append({ organization: '', role: '', date: '', description: '' })}>
                     <Plus className="h-4 w-4 mr-2" /> Add Experience
                 </Button>
             </CardHeader>
@@ -73,30 +105,25 @@ export function VolunteerForm() {
                                 size="icon"
                                 className="absolute top-2 right-2 text-destructive hover:bg-destructive/10"
                                 onClick={() => remove(index)}
+                                type="button"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Organization</Label>
-                                    <Input {...form.register(`volunteerExperience.${index}.organization`)} placeholder="Organization Name" />
-                                </div>
-                                <div className="space-y-2">
                                     <Label>Role</Label>
                                     <Input {...form.register(`volunteerExperience.${index}.role`)} placeholder="Volunteer Role" />
                                 </div>
+                                <div className="space-y-2">
+                                    <Label>Organization</Label>
+                                    <Input {...form.register(`volunteerExperience.${index}.organization`)} placeholder="Organization Name" />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Start Date</Label>
-                                    <Input type="date" {...form.register(`volunteerExperience.${index}.startDate`)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>End Date</Label>
-                                    <Input type="date" {...form.register(`volunteerExperience.${index}.endDate`)} />
-                                </div>
+                            <div className="space-y-2">
+                                <Label>Date (Optional)</Label>
+                                <Input {...form.register(`volunteerExperience.${index}.date`)} placeholder="e.g. 2020 - 2022" />
                             </div>
 
                             <div className="space-y-2">

@@ -18,7 +18,9 @@ const personalInfoSchema = z.object({
     phone_number: z.string().optional(),
     address: z.string().optional(),
     profile: z.string().optional(),
-    links: z.array(z.string().url("Invalid URL")),
+    links: z.array(z.object({
+        url: z.string().url("Invalid URL")
+    })),
 });
 
 type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
@@ -35,13 +37,13 @@ export function PersonalInfoForm() {
             phone_number: resumeData?.phone_number || '',
             address: resumeData?.address || '',
             profile: resumeData?.profile || '',
-            links: resumeData?.links || [],
+            links: resumeData?.links?.map(l => ({ url: l })) || [],
         },
     });
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
-        name: "links" as any, // React Hook Form types struggle with primitive arrays sometimes
+        name: "links",
     });
 
     useEffect(() => {
@@ -53,17 +55,43 @@ export function PersonalInfoForm() {
                 phone_number: resumeData.phone_number,
                 address: resumeData.address,
                 profile: resumeData.profile,
-                links: resumeData.links || []
+                links: resumeData.links?.map(l => ({ url: l })) || []
             };
-            if (JSON.stringify(newValues) !== JSON.stringify(currentValues)) {
-                form.reset(newValues);
+            // Simplistic check - might need deep comparison if this causes loops
+            if (JSON.stringify(newValues.name) !== JSON.stringify(currentValues.name) ||
+                JSON.stringify(newValues.email) !== JSON.stringify(currentValues.email) ||
+                JSON.stringify(newValues.address) !== JSON.stringify(currentValues.address) ||
+                JSON.stringify(newValues.profile) !== JSON.stringify(currentValues.profile) ||
+                JSON.stringify(newValues.links) !== JSON.stringify(currentValues.links)) {
+                // Resetting only if actually changed to avoid typing interference, 
+                // but for now simple reset is okay as long as data flow is unidirectional usually?
+                // Actually this form updates store on change, so store updates trigger this.
+                // We need to avoid loop.
+                // JSON.stringify comparison is roughly okay for this size.
+                if (JSON.stringify(newValues) !== JSON.stringify(currentValues)) {
+                    form.reset(newValues);
+                }
             }
         }
     }, [resumeData, form]);
 
     useEffect(() => {
         const subscription = form.watch((value) => {
-            updateResumeData(value as any);
+            if (!value) return;
+            // Map back to flat structure for store
+            const flatLinks = value.links?.map((l: any) => l.url) || [];
+
+            // Create update object matching Partial<ResumeData> but we only have personal info here
+            // and links.
+            const updatePayload = {
+                ...value,
+                links: flatLinks
+            };
+            // Remove the internal structure before sending to store
+            // The store expects ResumeData keys. 
+            // value contains name, email, etc which are fine.
+            // value.links is array of objects, we replaced it with string array.
+            updateResumeData(updatePayload as any);
         });
         return () => subscription.unsubscribe();
     }, [form.watch, updateResumeData]);
@@ -102,7 +130,7 @@ export function PersonalInfoForm() {
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
                             <Label>Links</Label>
-                            <Button type="button" variant="outline" size="sm" onClick={() => append('')}>
+                            <Button type="button" variant="outline" size="sm" onClick={() => append({ url: '' })}>
                                 <Plus className="h-3 w-3 mr-1" /> Add Link
                             </Button>
                         </div>
@@ -110,8 +138,11 @@ export function PersonalInfoForm() {
                             {fields.map((field, index) => (
                                 <div key={field.id} className="flex gap-2 items-center">
                                     <div className="flex-1">
-                                        <Input {...form.register(`links.${index}` as const)} placeholder="https://..." />
-                                        {form.formState.errors.links?.[index] && <p className="text-red-500 text-xs">{form.formState.errors.links[index]?.message}</p>}
+                                        <Input {...form.register(`links.${index}.url` as const)} placeholder="https://..." />
+                                        {/* Error handling for array fields is tricky with types, checking safe navigation */}
+                                        {form.formState.errors.links?.[index]?.url &&
+                                            <p className="text-red-500 text-xs">{form.formState.errors.links[index]?.url?.message}</p>
+                                        }
                                     </div>
                                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="text-destructive shrink-0">
                                         <Trash2 className="h-4 w-4" />

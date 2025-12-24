@@ -15,17 +15,19 @@ export default function LandingPage() {
 
   const handleCreateFromScratch = () => {
     setResumeData({
-      personalInfo: {
-        fullName: '',
-        email: '',
-        phone: '',
-        address: '',
-        website: '',
-        summary: '',
-      },
+      name: '',
+      address: '',
+      phone_number: '',
+      email: '',
+      links: [],
+      profile: '',
       education: [],
       experience: [],
       skills: [],
+      achievements_awards: [],
+      certificates_and_training: [],
+      extracurricular_or_volunteer_experience: [],
+      references: [],
     });
     router.push('/editor');
   };
@@ -83,7 +85,7 @@ export default function LandingPage() {
               <div className="space-y-4">
                 <p className="font-semibold">{resumeData ? "Or start over" : "Get Started"}</p>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => document.getElementById('resume-upload')?.click()}>
+                  <div className="flex flex-col items-center justify-center gap-2">
                     {/* Proxy click to FileUpload input if possible, but FileUpload component encapsulates it. 
                                  Actually, standard FileUpload component is better used directly. 
                                  Let's keep the existing FileUpload and add a button below/beside it.

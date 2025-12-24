@@ -52,7 +52,7 @@ export function FileUpload({ className }: FileUploadProps) {
         <Card
             {...getRootProps()}
             className={cn(
-                "border-2 border-dashed p-10 cursor-pointer hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center h-64",
+                "border-2 border-dashed p-16 cursor-pointer hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center min-h-[16rem]",
                 isDragActive && "border-primary bg-muted",
                 className
             )}

@@ -221,7 +221,7 @@ export function ResumePreview() {
                         }}
                     >
                         {/* Header */}
-                        <header className="text-center space-y-1 pb-4 border-b border-black">
+                        <header className="text-center space-y-1 pb-4">
                             <h1 className="text-2xl font-bold uppercase tracking-wide">{name}</h1>
                             <div className="flex flex-wrap justify-center gap-2 text-black">
                                 {address && <span>{address}</span>}
