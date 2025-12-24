@@ -25,9 +25,7 @@ export default function EditorPage() {
                         ResumeOptimizer <span className="text-muted-foreground font-normal">/ Editor</span>
                     </div>
                 </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Auto-saving...</span>
-                </div>
+
             </header>
 
             {/* Main Content */}

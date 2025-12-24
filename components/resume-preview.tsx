@@ -31,6 +31,9 @@ export function ResumePreview() {
                 padding: 0 !important;
                 overflow: hidden !important;
             }
+            .resume-document {
+                transform: none !important;
+            }
         }
     `;
 
@@ -136,17 +139,36 @@ export function ResumePreview() {
                             onValueChange={(val: number[]) => updateLayout({ margin: val[0] })}
                         />
                     </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between">
+                            <Label>Zoom: {layout?.zoom || 100}%</Label>
+                        </div>
+                        <Slider
+                            value={[layout?.zoom || 100]}
+                            min={50}
+                            max={150}
+                            step={10}
+                            onValueChange={(val: number[]) => updateLayout({ zoom: val[0] })}
+                        />
+                    </div>
                 </div>
             </div>
-            <div className="flex-1 overflow-auto p-8 bg-gray-100 dark:bg-gray-900">
-                <div className="flex justify-center">
-                    <style type="text/css" media="print">
-                        {pageStyle}
-                    </style>
+            <div className="flex-1 overflow-auto p-16 bg-gray-100 dark:bg-gray-900 flex justify-center items-start">
+                <style type="text/css" media="print">
+                    {pageStyle}
+                </style>
+                {/* Scale scaling wrapper */}
+                <div
+                    style={{
+                        transform: `scale(${(layout?.zoom || 100) / 100})`,
+                        transformOrigin: 'top center',
+                        transition: 'transform 0.2s ease-in-out'
+                    }}
+                >
                     {/* Harvard Style Template - A4 Paper */}
                     <div
                         ref={contentRef}
-                        className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] bg-white shadow-2xl print:shadow-none print:min-h-[296mm] print:h-auto text-black font-serif box-border"
+                        className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] bg-white shadow-2xl print:shadow-none print:min-h-[296mm] print:h-auto text-black font-serif box-border resume-document"
                         style={{
                             pageBreakAfter: 'auto',
                             padding: `${layout?.margin || 15}mm`,

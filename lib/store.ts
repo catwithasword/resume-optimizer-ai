@@ -21,6 +21,7 @@ export interface LayoutSettings {
     fontSize: number;
     lineHeight: number;
     margin: number;
+    zoom: number;
 }
 
 const defaultResumeData: ResumeData = {
@@ -86,7 +87,8 @@ const defaultResumeData: ResumeData = {
 const defaultLayout: LayoutSettings = {
     fontSize: 10, // pt (closer to standard document font sizes)
     lineHeight: 1.2,
-    margin: 15 // mm
+    margin: 15, // mm
+    zoom: 100 // %
 };
 
 export const useResumeStore = create<ResumeStore>((set) => ({
