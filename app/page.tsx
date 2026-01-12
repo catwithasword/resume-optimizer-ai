@@ -11,13 +11,26 @@ import { useEffect } from 'react';
 export default function LandingPage() {
   const router = useRouter();
   const resumeData = useResumeStore((state) => state.resumeData);
+  const setResumeData = useResumeStore((state) => state.setResumeData);
 
-  // If resume data is set (after upload), redirect to editor
-  // useEffect(() => {
-  //   if (resumeData) {
-  //     router.push('/editor');
-  //   }
-  // }, [resumeData, router]);
+  const handleCreateFromScratch = () => {
+    setResumeData({
+      name: '',
+      address: '',
+      phone_number: '',
+      email: '',
+      links: [],
+      profile: '',
+      education: [],
+      experience: [],
+      skills: [],
+      achievements_awards: [],
+      certificates_and_training: [],
+      extracurricular_or_volunteer_experience: [],
+      references: [],
+    });
+    router.push('/editor');
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -69,8 +82,24 @@ export default function LandingPage() {
             ) : null}
 
             <div className={resumeData ? "opacity-50 hover:opacity-100 transition-opacity" : ""}>
-              <p className="font-semibold mb-2">{resumeData ? "Or upload a new resume" : ""}</p>
-              <FileUpload className="bg-background shadow-lg" />
+              <div className="space-y-4">
+                <p className="font-semibold">{resumeData ? "Or start over" : "Get Started"}</p>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    {/* Proxy click to FileUpload input if possible, but FileUpload component encapsulates it. 
+                                 Actually, standard FileUpload component is better used directly. 
+                                 Let's keep the existing FileUpload and add a button below/beside it.
+                             */}
+                    <FileUpload className="w-full" />
+                  </div>
+                  <div className="border rounded-lg p-6 flex flex-col items-center justify-center gap-4 hover:bg-muted/50 transition-colors shadow-sm">
+                    <p className="font-medium">No resume?</p>
+                    <Button onClick={handleCreateFromScratch} variant="outline" className="w-full">
+                      Create from Scratch
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
               Supported formats: PDF, JPG, PNG

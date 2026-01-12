@@ -9,11 +9,14 @@ import { api } from '@/lib/api';
 import { useResumeStore } from '@/lib/store';
 // import { useToast } from '@/hooks/use-toast'; // Assuming shadcn toast
 
+import { useRouter } from 'next/navigation';
+
 interface FileUploadProps {
     className?: string;
 }
 
 export function FileUpload({ className }: FileUploadProps) {
+    const router = useRouter();
     const [isUploading, setIsUploading] = useState(false);
     const setResumeData = useResumeStore((state) => state.setResumeData);
     // const { toast } = useToast(); // We haven't installed toast yet, I'll skip toast for now or basic alert
@@ -27,13 +30,14 @@ export function FileUpload({ className }: FileUploadProps) {
             const data = await api.uploadResume(file);
             setResumeData(data);
             // toast({ title: "Success", description: "Resume uploaded and parsed successfully." });
+            router.push('/editor');
         } catch (error) {
             console.error(error);
             // toast({ title: "Error", description: "Failed to upload resume.", variant: "destructive" });
         } finally {
             setIsUploading(false);
         }
-    }, [setResumeData]);
+    }, [setResumeData, router]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -48,7 +52,7 @@ export function FileUpload({ className }: FileUploadProps) {
         <Card
             {...getRootProps()}
             className={cn(
-                "border-2 border-dashed p-10 cursor-pointer hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center h-64",
+                "border-2 border-dashed p-16 cursor-pointer hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center min-h-[16rem]",
                 isDragActive && "border-primary bg-muted",
                 className
             )}

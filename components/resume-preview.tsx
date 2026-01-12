@@ -4,9 +4,75 @@ import { useResumeStore } from '@/lib/store';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
+import { useRef, useState, useEffect } from 'react';
+
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+import { HarvardTemplate } from './templates/harvard-template';
+import { ModernTemplate } from './templates/modern-template';
+import { MinimalTemplate } from './templates/minimal-template';
 
 export function ResumePreview() {
     const resumeData = useResumeStore((state) => state.resumeData);
+    const layout = useResumeStore((state) => state.layout);
+    const updateLayout = useResumeStore((state) => state.updateLayout);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [numPages, setNumPages] = useState<number>(1);
+
+    const pageStyle = `
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+            }
+            /* Reset any conflicting styles */
+            html, body {
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .resume-document {
+                transform: none !important;
+            }
+        }
+    `;
+
+    // Calculate number of pages based on content height
+    useEffect(() => {
+        if (!contentRef.current) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                // A4 height in pixels (96 DPI) is approx 1122.5px
+                const a4HeightPx = 1122.5;
+                const contentHeight = entry.contentRect.height;
+                // At least 1 page, round up
+                const pages = Math.ceil(contentHeight / a4HeightPx) || 1;
+                setNumPages(pages);
+            }
+        });
+
+        observer.observe(contentRef.current);
+        return () => observer.disconnect();
+    }, [layout.selectedTemplate, layout.fontScale, layout.lineHeight, layout.margin]); // Re-calculate on layout changes
+
+    const reactToPrintFn = useReactToPrint({
+        contentRef,
+        documentTitle: `Resume - ${resumeData?.name || 'Draft'}`,
+        pageStyle: pageStyle,
+    });
 
     if (!resumeData) {
         return (
@@ -16,93 +82,142 @@ export function ResumePreview() {
         );
     }
 
-    const { personalInfo, education, experience, skills } = resumeData;
+    const renderTemplate = () => {
+        switch (layout.selectedTemplate) {
+            case 'modern':
+                return <ModernTemplate resumeData={resumeData} layout={layout} />;
+            case 'minimal':
+                return <MinimalTemplate resumeData={resumeData} layout={layout} />;
+            case 'harvard':
+            default:
+                return <HarvardTemplate resumeData={resumeData} layout={layout} />;
+        }
+    };
 
     return (
         <Card className="h-full flex flex-col">
-            <div className="p-4 border-b flex justify-between items-center bg-muted/30">
-                <h3 className="font-semibold">Live Preview</h3>
-                <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download PDF
-                </Button>
-            </div>
-            <div className="flex-1 overflow-auto p-8 bg-white text-black font-sans text-sm">
-                {/* Simple Template Layout */}
-                <div className="max-w-[21cm] mx-auto space-y-6">
-                    {/* Header */}
-                    <header className="text-center space-y-2 border-b pb-6">
-                        <h1 className="text-3xl font-bold uppercase tracking-wider">{personalInfo.fullName}</h1>
-                        <div className="flex flex-wrap justify-center gap-3 text-gray-600 text-xs">
-                            {personalInfo.email && <span>{personalInfo.email}</span>}
-                            {personalInfo.phone && <span>• {personalInfo.phone}</span>}
-                            {personalInfo.address && <span>• {personalInfo.address}</span>}
-                            {personalInfo.website && <span>• {personalInfo.website}</span>}
+            <div className="p-4 border-b space-y-4 bg-muted/30">
+                <div className="flex justify-between items-center">
+                    <h3 className="font-semibold">Live Preview</h3>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => reactToPrintFn()}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download PDF
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Layout Controls */}
+                <div className="space-y-4 text-sm">
+                    {/* Row 1: Template Selector */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                            <Label>Template</Label>
+                            <Select
+                                value={layout.selectedTemplate}
+                                onValueChange={(val) => updateLayout({ selectedTemplate: val })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select template" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="harvard">Harvard (Classic)</SelectItem>
+                                    <SelectItem value="modern">Modern (Sidebar)</SelectItem>
+                                    <SelectItem value="minimal">Minimal (Clean)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        {personalInfo.summary && (
-                            <p className="max-w-xl mx-auto text-gray-700 mt-4 leading-relaxed">
-                                {personalInfo.summary}
-                            </p>
-                        )}
-                    </header>
+                    </div>
 
-                    {/* Experience */}
-                    {experience.length > 0 && (
-                        <section>
-                            <h2 className="text-lg font-bold uppercase border-b border-gray-300 mb-4 pb-1">Experience</h2>
-                            <div className="space-y-4">
-                                {experience.map(exp => (
-                                    <div key={exp.id}>
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-bold text-gray-900">{exp.company}</h3>
-                                            <span className="text-xs text-gray-500">{exp.startDate} - {exp.endDate}</span>
-                                        </div>
-                                        <div className="text-sm font-medium text-gray-700 mb-1">{exp.position}</div>
-                                        {exp.description && (
-                                            <p className="text-gray-600 leading-snug whitespace-pre-line">
-                                                {exp.description}
-                                            </p>
-                                        )}
+                    {/* Row 2: Layout Controls */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Font Size: {layout?.fontScale || 100}%</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.fontScale || 100]}
+                                min={70}
+                                max={130}
+                                step={5}
+                                onValueChange={(val: number[]) => updateLayout({ fontScale: val[0] })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Line Spacing: {layout?.lineHeight || 1.2}</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.lineHeight || 1.2]}
+                                min={1.0}
+                                max={2.0}
+                                step={0.1}
+                                onValueChange={(val: number[]) => updateLayout({ lineHeight: val[0] })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Margin: {layout?.margin || 15}mm</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.margin || 15]}
+                                min={5}
+                                max={30}
+                                step={1}
+                                onValueChange={(val: number[]) => updateLayout({ margin: val[0] })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Zoom: {layout?.zoom || 100}%</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.zoom || 100]}
+                                min={50}
+                                max={150}
+                                step={10}
+                                onValueChange={(val: number[]) => updateLayout({ zoom: val[0] })}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="flex-1 overflow-auto p-16 bg-gray-100 dark:bg-gray-900 flex justify-center items-start">
+                <style type="text/css" media="print">
+                    {pageStyle}
+                </style>
+                {/* Sale scaling wrapper */}
+                <div
+                    style={{
+                        transform: `scale(${(layout?.zoom || 100) / 100})`,
+                        transformOrigin: 'top center',
+                        transition: 'transform 0.2s ease-in-out',
+                        position: 'relative'
+                    }}
+                >
+                    {/* Background Pages Layer */}
+                    <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center print:hidden z-0">
+                        {Array.from({ length: Math.max(numPages, 1) }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="w-[210mm] h-[297mm] bg-white shadow-2xl relative"
+                            >
+                                {/* Page Break Marker (except for last page) */}
+                                {i < numPages - 1 && (
+                                    <div className="absolute bottom-0 w-full border-b-2 border-dashed border-gray-300 print:hidden">
+                                        <span className="absolute right-2 bottom-1 text-[10px] text-gray-400 font-sans">
+                                            Page Break
+                                        </span>
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        </section>
-                    )}
+                        ))}
+                    </div>
 
-                    {/* Education */}
-                    {education.length > 0 && (
-                        <section>
-                            <h2 className="text-lg font-bold uppercase border-b border-gray-300 mb-4 pb-1">Education</h2>
-                            <div className="space-y-4">
-                                {education.map(edu => (
-                                    <div key={edu.id}>
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-bold text-gray-900">{edu.institution}</h3>
-                                            <span className="text-xs text-gray-500">{edu.startDate} - {edu.endDate}</span>
-                                        </div>
-                                        <div className="text-sm text-gray-700">
-                                            <span className="font-medium">{edu.degree}</span>
-                                            {edu.description && <span> • {edu.description}</span>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Skills */}
-                    {skills.length > 0 && (
-                        <section>
-                            <h2 className="text-lg font-bold uppercase border-b border-gray-300 mb-4 pb-1">Skills</h2>
-                            <div className="flex flex-wrap gap-2">
-                                {skills.map(skill => (
-                                    <span key={skill.id} className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-800 font-medium">
-                                        {skill.name} {skill.level && <span className="text-gray-400 font-normal">({skill.level})</span>}
-                                    </span>
-                                ))}
-                            </div>
-                        </section>
-                    )}
+                    {/* Template Content */}
+                    <div ref={contentRef}>
+                        {renderTemplate()}
+                    </div>
                 </div>
             </div>
         </Card>

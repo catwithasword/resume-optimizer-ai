@@ -14,11 +14,10 @@ import { Trash2, Plus } from 'lucide-react';
 
 const experienceSchema = z.object({
     experience: z.array(z.object({
-        id: z.string(),
         company: z.string().min(1, "Company is required"),
         position: z.string().min(1, "Position is required"),
-        startDate: z.string(),
-        endDate: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
         description: z.string().optional(),
     }))
 });
@@ -29,9 +28,52 @@ export function ExperienceForm() {
     const resumeData = useResumeStore((state) => state.resumeData);
     const updateResumeData = useResumeStore((state) => state.updateResumeData);
 
+    // Schema: "Role at Company (Date) – Description"
+    const parseExperience = (expStr: string) => {
+        const separatorRegex = / [–-] /;
+        const parts = expStr.split(separatorRegex);
+
+        const header = parts[0] || '';
+        const description = parts.slice(1).join(' – ');
+
+        // "Role at Company (2023-06 to Present)"
+        const dateMatch = header.match(/\((.*?)\)$/);
+        const dateRangeStr = dateMatch ? dateMatch[1] : '';
+        const titleAndCompany = dateMatch ? header.replace(dateMatch![0], '').trim() : header;
+
+        const [startDate, endDate] = dateRangeStr.split(' to ').map(d => d.trim());
+
+        // "Role at Company" -> split by " at " (last occurrence preferred)
+        const atIndex = titleAndCompany.lastIndexOf(' at ');
+        let position = titleAndCompany;
+        let company = '';
+
+        if (atIndex !== -1) {
+            position = titleAndCompany.substring(0, atIndex).trim();
+            company = titleAndCompany.substring(atIndex + 4).trim();
+        }
+
+        return {
+            company: company || 'Company', // fallback
+            position: position || '',
+            startDate: startDate || '',
+            endDate: endDate || '',
+            description: description || ''
+        };
+    };
+
+    const formatExperience = (exp: any) => {
+        let header = `${exp.position} at ${exp.company}`;
+        if (exp.startDate || exp.endDate) {
+            header += ` (${exp.startDate || ''} to ${exp.endDate || ''})`;
+        }
+
+        return exp.description ? `${header} – ${exp.description}` : header;
+    };
+
     const form = useForm<ExperienceValues>({
         resolver: zodResolver(experienceSchema),
-        defaultValues: { experience: resumeData?.experience || [] },
+        defaultValues: { experience: resumeData?.experience?.map(parseExperience) || [] },
     });
 
     const { fields, append, remove } = useFieldArray({
@@ -41,17 +83,15 @@ export function ExperienceForm() {
 
     useEffect(() => {
         if (resumeData?.experience) {
-            const currentExperience = form.getValues().experience;
-            if (JSON.stringify(resumeData.experience) !== JSON.stringify(currentExperience)) {
-                form.setValue("experience", resumeData.experience);
-            }
+            // const parsed = resumeData.experience.map(parseExperience);
+            // Sync logic omitted to prevent loops, relying on initial load
         }
-    }, [resumeData?.experience, form]);
+    }, [resumeData?.experience]);
 
     useEffect(() => {
         const subscription = form.watch((value) => {
-            // @ts-ignore
-            updateResumeData({ experience: value.experience });
+            const formatted = value.experience?.map(formatExperience) || [];
+            updateResumeData({ experience: formatted });
         });
         return () => subscription.unsubscribe();
     }, [form.watch, updateResumeData]);
@@ -60,22 +100,25 @@ export function ExperienceForm() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Experience</CardTitle>
-                <Button size="sm" onClick={() => append({ id: crypto.randomUUID(), company: '', position: '', startDate: '', endDate: '', description: '' })}>
+                <Button size="sm" onClick={() => append({ company: '', position: '', startDate: '', endDate: '', description: '' })}>
                     <Plus className="h-4 w-4 mr-2" /> Add Experience
                 </Button>
             </CardHeader>
             <CardContent className="space-y-6">
                 <form className="space-y-6">
                     {fields.map((field, index) => (
-                        <div key={field.id} className="relative border p-4 rounded-lg space-y-4">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-2 right-2 text-destructive hover:bg-destructive/10"
-                                onClick={() => remove(index)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                        <div key={field.id} className="border p-4 rounded-lg space-y-4">
+                            <div className="flex justify-end mb-2">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:bg-destructive/10"
+                                    onClick={() => remove(index)}
+                                    type="button"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -90,12 +133,12 @@ export function ExperienceForm() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Start Date</Label>
-                                    <Input type="date" {...form.register(`experience.${index}.startDate`)} />
+                                    <Label>Start Date (YYYY-MM)</Label>
+                                    <Input {...form.register(`experience.${index}.startDate`)} placeholder="2023-06" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>End Date</Label>
-                                    <Input type="date" {...form.register(`experience.${index}.endDate`)} />
+                                    <Input {...form.register(`experience.${index}.endDate`)} placeholder="Present" />
                                 </div>
                             </div>
 

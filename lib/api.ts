@@ -2,47 +2,28 @@ import { ResumeData, OptimizationResult } from './types';
 
 // Mock data
 const MOCK_RESUME_DATA: ResumeData = {
-    personalInfo: {
-        fullName: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1 234 567 890",
-        address: "123 Main St, Anytown, USA",
-        website: "https://johndoe.com",
-        summary: "Experienced software engineer with a passion for building scalable web applications.",
-    },
+    name: "John Doe",
+    email: "john.doe@example.com",
+    phone_number: "+1 234 567 890",
+    address: "123 Main St, Anytown, USA",
+    links: ["https://johndoe.com"],
+    profile: "Experienced software engineer with a passion for building scalable web applications.",
     education: [
-        {
-            id: "1",
-            institution: "State University",
-            degree: "Bachelor of Science in Computer Science",
-            startDate: "2015-09-01",
-            endDate: "2019-05-31",
-            description: "Graduated with Honors. GPA: 3.8/4.0",
-        }
+        "State University | Bachelor of Science in Computer Science | 2015-09 to 2019-05 | GPA: 3.8/4.0 | Graduated with Honors"
     ],
     experience: [
-        {
-            id: "1",
-            company: "Tech Corp",
-            position: "Senior Frontend Developer",
-            startDate: "2021-06-01",
-            endDate: "Present",
-            description: "Leading a team of 5 developers building the core product dashboard using Next.js and React.",
-        },
-        {
-            id: "2",
-            company: "Startup Inc",
-            position: "Junior Developer",
-            startDate: "2019-07-01",
-            endDate: "2021-05-31",
-            description: "Implemented responsive UI components and improved site performance by 30%.",
-        }
+        "Senior Frontend Developer at Tech Corp (2021-06 to Present) – Leading a team of 5 developers building the core product dashboard using Next.js and React.",
+        "Junior Developer at Startup Inc (2019-07 to 2021-05) – Implemented responsive UI components and improved site performance by 30%."
     ],
     skills: [
-        { id: "1", name: "React", level: "Expert" },
-        { id: "2", name: "TypeScript", level: "Advanced" },
-        { id: "3", name: "Node.js", level: "Intermediate" },
-    ]
+        "React",
+        "TypeScript",
+        "Node.js"
+    ],
+    achievements_awards: [],
+    certificates_and_training: [],
+    extracurricular_or_volunteer_experience: [],
+    references: []
 };
 
 const MOCK_OPTIMIZATION_RESULT: OptimizationResult = {
