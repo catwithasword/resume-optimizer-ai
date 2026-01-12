@@ -9,6 +9,17 @@ import { useRef, useState, useEffect } from 'react';
 
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+import { HarvardTemplate } from './templates/harvard-template';
+import { ModernTemplate } from './templates/modern-template';
+import { MinimalTemplate } from './templates/minimal-template';
 
 export function ResumePreview() {
     const resumeData = useResumeStore((state) => state.resumeData);
@@ -55,7 +66,7 @@ export function ResumePreview() {
 
         observer.observe(contentRef.current);
         return () => observer.disconnect();
-    }, []);
+    }, [layout.selectedTemplate, layout.fontScale, layout.lineHeight, layout.margin]); // Re-calculate on layout changes
 
     const reactToPrintFn = useReactToPrint({
         contentRef,
@@ -71,106 +82,103 @@ export function ResumePreview() {
         );
     }
 
-    const { name, address, phone_number, email, links, profile, education, experience, skills, achievements_awards, certificates_and_training, extracurricular_or_volunteer_experience, references } = resumeData;
-
-    // Helper to parse Education string: "Institution | Degree | Date | GPA | Coursework"
-    // Heuristic: Split by '|', then try to map to [Institution, Degree, Date, optional...]
-    const parseEducation = (eduStr: string) => {
-        const parts = eduStr.split('|').map(s => s.trim());
-        return {
-            institution: parts[0] || '',
-            degree: parts[1] || '',
-            date: parts[2] || '',
-            details: parts.slice(3).join(' | ')
-        };
-    };
-
-    // Helper to parse Experience: "Role at Company (Date) – Description"
-    // Regex to try and extract Role, Company, Date. 
-    // Fallback: Split by '–' (en dash) or '-' to separate header from description
-    const parseExperience = (expStr: string) => {
-        // Try to finding the separator "–" or "-" which likely separates header from description
-        const separatorRegex = / [–-] /;
-        const parts = expStr.split(separatorRegex);
-
-        const header = parts[0] || '';
-        const description = parts.slice(1).join(' – '); // Rejoin the rest
-
-        // In header, try to extract Date if it's in parentheses at the end
-        // "Role at Company (2023-06 to Present)"
-        const dateMatch = header.match(/\((.*?)\)$/);
-        const date = dateMatch ? dateMatch[1] : '';
-        const titleAndCompany = date ? header.replace(dateMatch![0], '').trim() : header;
-
-        return {
-            titleAndCompany,
-            date,
-            description
-        };
+    const renderTemplate = () => {
+        switch (layout.selectedTemplate) {
+            case 'modern':
+                return <ModernTemplate resumeData={resumeData} layout={layout} />;
+            case 'minimal':
+                return <MinimalTemplate resumeData={resumeData} layout={layout} />;
+            case 'harvard':
+            default:
+                return <HarvardTemplate resumeData={resumeData} layout={layout} />;
+        }
     };
 
     return (
         <Card className="h-full flex flex-col">
-            {/* ... layout controls container ... */}
             <div className="p-4 border-b space-y-4 bg-muted/30">
                 <div className="flex justify-between items-center">
                     <h3 className="font-semibold">Live Preview</h3>
-                    <Button variant="outline" size="sm" onClick={() => reactToPrintFn()}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download PDF
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => reactToPrintFn()}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download PDF
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Layout Controls */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    {/* ... sliders ... */}
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <Label>Font Size: {layout?.fontSize || 10}pt</Label>
+                <div className="space-y-4 text-sm">
+                    {/* Row 1: Template Selector */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                            <Label>Template</Label>
+                            <Select
+                                value={layout.selectedTemplate}
+                                onValueChange={(val) => updateLayout({ selectedTemplate: val })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select template" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="harvard">Harvard (Classic)</SelectItem>
+                                    <SelectItem value="modern">Modern (Sidebar)</SelectItem>
+                                    <SelectItem value="minimal">Minimal (Clean)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <Slider
-                            value={[layout?.fontSize || 10]}
-                            min={8}
-                            max={14}
-                            step={0.5}
-                            onValueChange={(val: number[]) => updateLayout({ fontSize: val[0] })}
-                        />
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <Label>Line Spacing: {layout?.lineHeight || 1.2}</Label>
+
+                    {/* Row 2: Layout Controls */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Font Size: {layout?.fontScale || 100}%</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.fontScale || 100]}
+                                min={70}
+                                max={130}
+                                step={5}
+                                onValueChange={(val: number[]) => updateLayout({ fontScale: val[0] })}
+                            />
                         </div>
-                        <Slider
-                            value={[layout?.lineHeight || 1.2]}
-                            min={1.0}
-                            max={2.0}
-                            step={0.1}
-                            onValueChange={(val: number[]) => updateLayout({ lineHeight: val[0] })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <Label>Margin: {layout?.margin || 15}mm</Label>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Line Spacing: {layout?.lineHeight || 1.2}</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.lineHeight || 1.2]}
+                                min={1.0}
+                                max={2.0}
+                                step={0.1}
+                                onValueChange={(val: number[]) => updateLayout({ lineHeight: val[0] })}
+                            />
                         </div>
-                        <Slider
-                            value={[layout?.margin || 15]}
-                            min={5}
-                            max={30}
-                            step={1}
-                            onValueChange={(val: number[]) => updateLayout({ margin: val[0] })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <Label>Zoom: {layout?.zoom || 100}%</Label>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Margin: {layout?.margin || 15}mm</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.margin || 15]}
+                                min={5}
+                                max={30}
+                                step={1}
+                                onValueChange={(val: number[]) => updateLayout({ margin: val[0] })}
+                            />
                         </div>
-                        <Slider
-                            value={[layout?.zoom || 100]}
-                            min={50}
-                            max={150}
-                            step={10}
-                            onValueChange={(val: number[]) => updateLayout({ zoom: val[0] })}
-                        />
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label>Zoom: {layout?.zoom || 100}%</Label>
+                            </div>
+                            <Slider
+                                value={[layout?.zoom || 100]}
+                                min={50}
+                                max={150}
+                                step={10}
+                                onValueChange={(val: number[]) => updateLayout({ zoom: val[0] })}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,13 +186,13 @@ export function ResumePreview() {
                 <style type="text/css" media="print">
                     {pageStyle}
                 </style>
-                {/* Scale scaling wrapper */}
+                {/* Sale scaling wrapper */}
                 <div
                     style={{
                         transform: `scale(${(layout?.zoom || 100) / 100})`,
                         transformOrigin: 'top center',
                         transition: 'transform 0.2s ease-in-out',
-                        position: 'relative' // Needed for absolute bg positioning context? No, strictly resume container
+                        position: 'relative'
                     }}
                 >
                     {/* Background Pages Layer */}
@@ -206,177 +214,9 @@ export function ResumePreview() {
                         ))}
                     </div>
 
-                    {/* Harvard Style Template - A4 Paper overlay */}
-                    <div
-                        ref={contentRef}
-                        className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] text-black font-serif box-border resume-document relative z-10 print:bg-white"
-                        style={{
-                            pageBreakAfter: 'auto',
-                            padding: `${layout?.margin || 15}mm`,
-                            fontSize: `${layout?.fontSize || 10}pt`,
-                            lineHeight: layout?.lineHeight || 1.2,
-                            // content flows continuously, ignoring gaps
-                            backgroundColor: 'transparent', // transparent to show background pages
-                            minHeight: `${numPages * 297}mm` // Force container to be at least as tall as the pages
-                        }}
-                    >
-                        {/* Header */}
-                        <header className="text-center space-y-1 pb-4">
-                            <h1 className="text-2xl font-bold uppercase tracking-wide">{name}</h1>
-                            <div className="flex flex-wrap justify-center gap-2 text-black">
-                                {address && <span>{address}</span>}
-                                {address && (phone_number || email || (links && links.length > 0)) && <span>•</span>}
-
-                                {phone_number && <span>{phone_number}</span>}
-                                {phone_number && (email || (links && links.length > 0)) && <span>•</span>}
-
-                                {email && <span>{email}</span>}
-                                {email && (links && links.length > 0) && <span>•</span>}
-
-                                {links?.map((link, index) => {
-                                    // Extract simple label from URL (e.g. linkedin.com/in/foo -> linkedin/foo or just linkedin)
-                                    let label = link.replace(/^https?:\/\/(www\.)?/, '');
-                                    if (label.length > 30) label = label.substring(0, 27) + '...';
-
-                                    return (
-                                        <span key={index}>
-                                            <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline">{label}</a>
-                                            {index < (links.length || 0) - 1 && <span> • </span>}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                            {profile && (
-                                <p className="pt-2 text-left leading-relaxed">
-                                    {profile}
-                                </p>
-                            )}
-                        </header>
-
-                        {/* Education */}
-                        {education && education.length > 0 && (
-                            <section className="mt-4">
-                                <h2 className="font-bold uppercase border-b border-black mb-3">Education</h2>
-                                <div className="space-y-3">
-                                    {education.map((eduStr, i) => {
-                                        const { institution, degree, date, details } = parseEducation(eduStr);
-                                        return (
-                                            <div key={i} className="break-inside-avoid">
-                                                <div className="flex justify-between items-baseline">
-                                                    <h3 className="font-bold">{institution}</h3>
-                                                    <span className="">{date}</span>
-                                                </div>
-                                                <div className="flex justify-between items-baseline italic">
-                                                    <div>{degree}</div>
-                                                </div>
-                                                {details && (
-                                                    <p className="mt-1 leading-snug whitespace-pre-line text-[0.95em]">
-                                                        {details}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Experience */}
-                        {experience && experience.length > 0 && (
-                            <section className="mt-4">
-                                <h2 className="font-bold uppercase border-b border-black mb-3">Experience</h2>
-                                <div className="space-y-4">
-                                    {experience.map((expStr, i) => {
-                                        const { titleAndCompany, date, description } = parseExperience(expStr);
-                                        return (
-                                            <div key={i} className="break-inside-avoid">
-                                                <div className="flex justify-between items-baseline">
-                                                    <h3 className="font-bold">{titleAndCompany}</h3>
-                                                    <span className="">{date}</span>
-                                                </div>
-                                                {description && (
-                                                    <p className="leading-snug whitespace-pre-line text-[0.95em]">
-                                                        {description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Achievements / Awards */}
-                        {achievements_awards && achievements_awards.length > 0 && (
-                            <section className="mt-4">
-                                <h2 className="font-bold uppercase border-b border-black mb-3">Achievements & Awards</h2>
-                                <div className="space-y-1">
-                                    {achievements_awards.map((ach, i) => (
-                                        <div key={i} className="flex gap-2 break-inside-avoid">
-                                            <span>• {ach}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Certificates */}
-                        {certificates_and_training && certificates_and_training.length > 0 && (
-                            <section className="mt-4">
-                                <h2 className="font-bold uppercase border-b border-black mb-3">Certificates</h2>
-                                <div className="space-y-1">
-                                    {certificates_and_training.map((cert, i) => (
-                                        <div key={i} className="flex gap-2 break-inside-avoid">
-                                            <span>• {cert}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Volunteer Experience */}
-                        {extracurricular_or_volunteer_experience && extracurricular_or_volunteer_experience.length > 0 && (
-                            <section className="mt-4">
-                                <h2 className="font-bold uppercase border-b border-black mb-3">Volunteering</h2>
-                                <div className="space-y-1">
-                                    {extracurricular_or_volunteer_experience.map((vol, i) => (
-                                        <div key={i} className="break-inside-avoid">
-                                            <p>{vol}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Skills */}
-                        {skills && skills.length > 0 && (
-                            <section className="mt-4">
-                                <h2 className="font-bold uppercase border-b border-black mb-3">Skills</h2>
-                                <div className="break-inside-avoid">
-                                    <span className="font-bold">Skills: </span>
-                                    {skills.map((skill, index) => (
-                                        <span key={index}>
-                                            {skill}
-                                            {index < skills.length - 1 ? ', ' : ''}
-                                        </span>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* References */}
-                        {references && references.length > 0 && (
-                            <section className="mt-4">
-                                <h2 className="font-bold uppercase border-b border-black mb-3">References</h2>
-                                <div className="space-y-1">
-                                    {references.map((ref, i) => (
-                                        <div key={i} className="break-inside-avoid">
-                                            <p>{ref}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
+                    {/* Template Content */}
+                    <div ref={contentRef}>
+                        {renderTemplate()}
                     </div>
                 </div>
             </div>

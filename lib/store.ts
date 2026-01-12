@@ -18,10 +18,11 @@ interface ResumeStore {
 }
 
 export interface LayoutSettings {
-    fontSize: number;
+    fontScale: number; // percentage, e.g., 100
     lineHeight: number;
     margin: number;
     zoom: number;
+    selectedTemplate: string;
 }
 
 const defaultResumeData: ResumeData = {
@@ -85,10 +86,11 @@ const defaultResumeData: ResumeData = {
 };
 
 const defaultLayout: LayoutSettings = {
-    fontSize: 10, // pt (closer to standard document font sizes)
+    fontScale: 100, // %
     lineHeight: 1.2,
     margin: 15, // mm
-    zoom: 100 // %
+    zoom: 100, // %
+    selectedTemplate: 'harvard'
 };
 
 export const useResumeStore = create<ResumeStore>((set) => ({
