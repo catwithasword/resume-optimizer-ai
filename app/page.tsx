@@ -7,6 +7,7 @@ import { FileUpload } from '@/components/file-upload';
 import { CheckCircle } from 'lucide-react';
 import { SiReactiveresume } from "react-icons/si";
 import { useResumeStore } from '@/lib/store';
+import { hasResumeData } from '@/lib/utils';
 import { useEffect } from 'react';
 
 export default function LandingPage() {
@@ -33,6 +34,8 @@ export default function LandingPage() {
     router.push('/editor');
   };
 
+  const showContinueEditing = hasResumeData(resumeData);
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-6 h-16 flex items-center border-b">
@@ -43,7 +46,7 @@ export default function LandingPage() {
           Resume Optimizer
         </div>
         <nav className="ml-auto flex gap-4">
-          {resumeData && (
+          {showContinueEditing && (
             <Button variant="ghost" asChild>
               <Link href="/editor">Continue Editing</Link>
             </Button>
@@ -62,7 +65,7 @@ export default function LandingPage() {
           </p>
 
           <div className="max-w-xl mx-auto mt-12 space-y-4">
-            {resumeData ? (
+            {showContinueEditing ? (
               <div className="bg-muted p-6 rounded-lg border flex flex-col items-center gap-4">
                 <div className="flex items-center gap-2 text-primary font-semibold">
                   <CheckCircle className="h-5 w-5" />
@@ -82,9 +85,9 @@ export default function LandingPage() {
               </div>
             ) : null}
 
-            <div className={resumeData ? "opacity-50 hover:opacity-100 transition-opacity" : ""}>
+            <div className={showContinueEditing ? "opacity-50 hover:opacity-100 transition-opacity" : ""}>
               <div className="space-y-4">
-                <p className="font-semibold">{resumeData ? "Or start over" : "Get Started"}</p>
+                <p className="font-semibold">{showContinueEditing ? "Or start over" : "Get Started"}</p>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col items-center justify-center gap-2">
                     {/* Proxy click to FileUpload input if possible, but FileUpload component encapsulates it. 

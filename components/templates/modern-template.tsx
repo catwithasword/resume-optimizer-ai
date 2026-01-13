@@ -37,6 +37,11 @@ export function ModernTemplate({ resumeData, layout }: TemplateProps) {
         };
     };
 
+    const hasContact = !!(email || phone_number || address || (links && links.length > 0));
+    const hasSkills = !!(skills && skills.length > 0);
+    const hasAwards = !!(achievements_awards && achievements_awards.length > 0);
+    const hasSidebarContent = hasContact || hasSkills || hasAwards;
+
     return (
         <div
             className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] text-slate-800 font-sans box-border resume-document relative z-10 print:bg-white grid grid-cols-[1fr_2fr]"
@@ -51,50 +56,54 @@ export function ModernTemplate({ resumeData, layout }: TemplateProps) {
             }}
         >
             {/* Absolute Background for Sidebar - Strictly A4 Height */}
-            <div className="absolute left-0 top-0 bottom-0 w-[33.333333%] bg-slate-100 border-r border-slate-200 -z-10" />
+            {hasSidebarContent && (
+                <div className="absolute left-0 top-0 bottom-0 w-[33.333333%] bg-slate-100 border-r border-slate-200 -z-10" />
+            )}
 
             {/* Left Sidebar Content */}
             <div className="p-6 flex flex-col gap-6 text-[0.9em] h-full">
                 {/* Contact */}
-                <div className="space-y-3">
-                    <h3 className="font-bold uppercase tracking-wider text-slate-900 border-b-2 border-slate-300 pb-1 mb-2">Contact</h3>
-                    <div className="space-y-2 break-all">
-                        {email && (
-                            <div>
-                                <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Email</span>
-                                {email}
-                            </div>
-                        )}
-                        {phone_number && (
-                            <div>
-                                <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Phone</span>
-                                {phone_number}
-                            </div>
-                        )}
-                        {address && (
-                            <div>
-                                <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Address</span>
-                                {address}
-                            </div>
-                        )}
-                        {links && links.length > 0 && (
-                            <div>
-                                <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Links</span>
-                                <ul className="list-none space-y-1">
-                                    {links.map((link, i) => {
-                                        let label = link.replace(/^https?:\/\/(www\.)?/, '');
-                                        if (label.length > 25) label = label.substring(0, 22) + '...';
-                                        return (
-                                            <li key={i}>
-                                                <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-600">{label}</a>
-                                            </li>
-                                        )
-                                    })}
-                                </ul>
-                            </div>
-                        )}
+                {hasContact && (
+                    <div className="space-y-3">
+                        <h3 className="font-bold uppercase tracking-wider text-slate-900 border-b-2 border-slate-300 pb-1 mb-2">Contact</h3>
+                        <div className="space-y-2 break-all">
+                            {email && (
+                                <div>
+                                    <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Email</span>
+                                    {email}
+                                </div>
+                            )}
+                            {phone_number && (
+                                <div>
+                                    <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Phone</span>
+                                    {phone_number}
+                                </div>
+                            )}
+                            {address && (
+                                <div>
+                                    <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Address</span>
+                                    {address}
+                                </div>
+                            )}
+                            {links && links.length > 0 && (
+                                <div>
+                                    <span className="block font-semibold text-[0.8em] text-slate-500 uppercase">Links</span>
+                                    <ul className="list-none space-y-1">
+                                        {links.map((link, i) => {
+                                            let label = link.replace(/^https?:\/\/(www\.)?/, '');
+                                            if (label.length > 25) label = label.substring(0, 22) + '...';
+                                            return (
+                                                <li key={i}>
+                                                    <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-600">{label}</a>
+                                                </li>
+                                            )
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Skills */}
                 {skills && skills.length > 0 && (
