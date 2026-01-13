@@ -30,6 +30,7 @@ export default function LandingPage() {
       certificates_and_training: [],
       extracurricular_or_volunteer_experience: [],
       references: [],
+      etc: []
     });
     router.push('/editor');
   };
@@ -115,7 +116,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="py-8 px-6 border-t text-center text-muted-foreground">
-        &copy; 2025 ResumeOptimizer. All rights reserved.
+        &copy; {new Date().getFullYear()} Resume Optimizer. All rights reserved.
       </footer>
     </div>
   );

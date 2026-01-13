@@ -23,7 +23,8 @@ const MOCK_RESUME_DATA: ResumeData = {
     achievements_awards: [],
     certificates_and_training: [],
     extracurricular_or_volunteer_experience: [],
-    references: []
+    references: [],
+    etc: []
 };
 
 const MOCK_OPTIMIZATION_RESULT: OptimizationResult = {
@@ -73,7 +74,7 @@ export const api = {
             Certificate_and_Training: data.certificates_and_training.join("\n"),
             Extracurricular_Activities_or_Volunteer_Experience: data.extracurricular_or_volunteer_experience.join("\n"),
             References: data.references.join("\n"),
-            etc: ""
+            etc: data.etc ? data.etc.join("\n") : ""
         };
 
         try {
@@ -113,7 +114,8 @@ export const api = {
                 achievements_awards: splitToList(refineData.Achievements_Awards).length > 0 ? splitToList(refineData.Achievements_Awards) : data.achievements_awards,
                 certificates_and_training: splitToList(refineData.Certificate_and_Training).length > 0 ? splitToList(refineData.Certificate_and_Training) : data.certificates_and_training,
                 extracurricular_or_volunteer_experience: splitToList(refineData.Extracurricular_Activities_or_Volunteer_Experience).length > 0 ? splitToList(refineData.Extracurricular_Activities_or_Volunteer_Experience) : data.extracurricular_or_volunteer_experience,
-                references: splitToList(refineData.References).length > 0 ? splitToList(refineData.References) : data.references
+                references: splitToList(refineData.References).length > 0 ? splitToList(refineData.References) : data.references,
+                etc: splitToList(refineData.etc).length > 0 ? splitToList(refineData.etc) : (data.etc || [])
             };
         } catch (error) {
             console.error("Error optimizing resume:", error);
@@ -123,7 +125,8 @@ export const api = {
 };
 
 // Helper to safely convert array items to strings
-const safeStringArray = (arr: any[] | undefined): string[] => {
+const safeStringArray = (arr: any | any[] | undefined): string[] => {
+    if (typeof arr === 'string') return [arr];
     if (!Array.isArray(arr)) return [];
     return arr.map(item => {
         if (typeof item === 'string') return item;
@@ -149,6 +152,7 @@ function mapApiResponseToResumeData(data: any): ResumeData {
         achievements_awards: safeStringArray(data.Achievements_Awards),
         certificates_and_training: safeStringArray(data.Certificate_and_Training),
         extracurricular_or_volunteer_experience: safeStringArray(data.Extracurricular_Activities_or_Volunteer_Experience),
-        references: safeStringArray(data.References)
+        references: safeStringArray(data.References),
+        etc: safeStringArray(data.etc)
     };
 }
