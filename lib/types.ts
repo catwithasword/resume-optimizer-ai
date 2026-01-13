@@ -12,6 +12,7 @@ export interface ResumeData {
   certificates_and_training: string[];
   extracurricular_or_volunteer_experience: string[];
   references: string[];
+  etc: string[];
 }
 
 export interface OptimizationResult {

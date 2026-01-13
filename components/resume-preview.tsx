@@ -1,9 +1,10 @@
 "use client";
 
 import { useResumeStore } from '@/lib/store';
+import { hasResumeData } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { useRef, useState, useEffect } from 'react';
 
@@ -25,6 +26,7 @@ export function ResumePreview() {
     const resumeData = useResumeStore((state) => state.resumeData);
     const layout = useResumeStore((state) => state.layout);
     const updateLayout = useResumeStore((state) => state.updateLayout);
+    const isOptimizing = useResumeStore((state) => state.isOptimizing);
     const contentRef = useRef<HTMLDivElement>(null);
     const [numPages, setNumPages] = useState<number>(1);
 
@@ -51,6 +53,11 @@ export function ResumePreview() {
 
     // Calculate number of pages based on content height
     useEffect(() => {
+        if (!hasResumeData(resumeData)) {
+            setNumPages(1);
+            return;
+        }
+
         if (!contentRef.current) return;
 
         const observer = new ResizeObserver((entries) => {
@@ -58,15 +65,22 @@ export function ResumePreview() {
                 // A4 height in pixels (96 DPI) is approx 1122.5px
                 const a4HeightPx = 1122.5;
                 const contentHeight = entry.contentRect.height;
-                // At least 1 page, round up
-                const pages = Math.ceil(contentHeight / a4HeightPx) || 1;
-                setNumPages(pages);
+                // Calculate pages with a threshold
+                // Only trigger a new page if content overflows by more than 5% of a page (approx 56px)
+                // This prevents "ghost pages" from minor layout expansions
+                const rawPages = contentHeight / a4HeightPx;
+                const fullPages = Math.floor(rawPages);
+                const remainder = rawPages - fullPages;
+
+                // Increased threshold to 0.15 (approx 168px/4.4cm)
+                const pages = remainder > 0.15 ? Math.ceil(rawPages) : fullPages;
+                setNumPages(Math.max(pages, 1));
             }
         });
 
         observer.observe(contentRef.current);
         return () => observer.disconnect();
-    }, [layout.selectedTemplate, layout.fontScale, layout.lineHeight, layout.margin]); // Re-calculate on layout changes
+    }, [resumeData, layout.selectedTemplate, layout.fontScale, layout.lineHeight, layout.margin]); // Added resumeData dependency
 
     const reactToPrintFn = useReactToPrint({
         contentRef,
@@ -182,41 +196,62 @@ export function ResumePreview() {
                     </div>
                 </div>
             </div>
-            <div className="flex-1 overflow-auto p-16 bg-gray-100 dark:bg-gray-900 flex justify-center items-start">
+            {/* Grid Safe Center: The definitive solution for zoomable canvases */}
+            <div
+                className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-900 relative"
+                style={{
+                    display: 'grid',
+                    placeItems: 'safe center', // Magic property: centers if fits, start-aligns if overflows
+                    padding: '4rem' // p-16 equivalent
+                }}
+            >
+                {isOptimizing && (
+                    <div className="absolute inset-0 z-50 bg-background/50 backdrop-blur-sm flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-sm font-medium text-primary">Optimizing Resume...</p>
+                        </div>
+                    </div>
+                )}
                 <style type="text/css" media="print">
                     {pageStyle}
                 </style>
-                {/* Sale scaling wrapper */}
+
+                {/* Scale scaling wrapper */}
                 <div
                     style={{
-                        transform: `scale(${(layout?.zoom || 100) / 100})`,
-                        transformOrigin: 'top center',
-                        transition: 'transform 0.2s ease-in-out',
-                        position: 'relative'
+                        width: `calc(210mm * ${(layout?.zoom || 100) / 100})`,
+                        height: `calc(((${Math.max(numPages, 1)} * 297mm) + (${Math.max(0, numPages - 1)} * 2rem)) * ${(layout?.zoom || 100) / 100})`,
+                        position: 'relative',
+                        // display: 'flex', // Not needed, grid item
                     }}
                 >
-                    {/* Background Pages Layer */}
-                    <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center print:hidden z-0">
-                        {Array.from({ length: Math.max(numPages, 1) }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="w-[210mm] h-[297mm] bg-white shadow-2xl relative"
-                            >
-                                {/* Page Break Marker (except for last page) */}
-                                {i < numPages - 1 && (
-                                    <div className="absolute bottom-0 w-full border-b-2 border-dashed border-gray-300 print:hidden">
-                                        <span className="absolute right-2 bottom-1 text-[10px] text-gray-400 font-sans">
-                                            Page Break
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                    <div
+                        style={{
+                            width: '210mm',
+                            transform: `scale(${(layout?.zoom || 100) / 100})`,
+                            transformOrigin: 'top left',
+                            transition: 'transform 0.2s ease-in-out',
+                            position: 'relative',
+                            boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        {/* Background Pages Layer */}
+                        <div className="absolute top-0 left-0 w-full min-h-full flex flex-col gap-8 items-center print:hidden z-0">
+                            {Array.from({ length: Math.max(numPages, 1) }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="w-[210mm] h-[297mm] bg-white shadow-2xl relative shrink-0"
+                                >
+                                    {/* Page Break Marker */}
+                                </div>
+                            ))}
+                        </div>
 
-                    {/* Template Content */}
-                    <div ref={contentRef}>
-                        {renderTemplate()}
+                        {/* Template Content */}
+                        <div ref={contentRef}>
+                            {renderTemplate()}
+                        </div>
                     </div>
                 </div>
             </div>
