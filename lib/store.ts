@@ -38,7 +38,8 @@ const defaultResumeData: ResumeData = {
     achievements_awards: [],
     certificates_and_training: [],
     extracurricular_or_volunteer_experience: [],
-    references: []
+    references: [],
+    etc: []
 };
 
 const defaultLayout: LayoutSettings = {
