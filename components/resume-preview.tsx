@@ -212,13 +212,9 @@ export function ResumePreview() {
                                 className="w-[210mm] h-[297mm] bg-white shadow-2xl relative"
                             >
                                 {/* Page Break Marker (except for last page) */}
-                                {i < numPages - 1 && (
-                                    <div className="absolute bottom-0 w-full border-b-2 border-dashed border-gray-300 print:hidden">
-                                        <span className="absolute right-2 bottom-1 text-[10px] text-gray-400 font-sans">
-                                            Page Break
-                                        </span>
-                                    </div>
-                                )}
+                                {/* Page Break Marker (except for last page) */
+                                    /* Visual marker removed as per request */
+                                }
                             </div>
                         ))}
                     </div>
