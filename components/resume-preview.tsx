@@ -3,7 +3,7 @@
 import { useResumeStore } from '@/lib/store';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { useRef, useState, useEffect } from 'react';
 
@@ -25,6 +25,7 @@ export function ResumePreview() {
     const resumeData = useResumeStore((state) => state.resumeData);
     const layout = useResumeStore((state) => state.layout);
     const updateLayout = useResumeStore((state) => state.updateLayout);
+    const isOptimizing = useResumeStore((state) => state.isOptimizing);
     const contentRef = useRef<HTMLDivElement>(null);
     const [numPages, setNumPages] = useState<number>(1);
 
@@ -182,7 +183,15 @@ export function ResumePreview() {
                     </div>
                 </div>
             </div>
-            <div className="flex-1 overflow-auto p-16 bg-gray-100 dark:bg-gray-900 flex justify-center items-start">
+            <div className="flex-1 overflow-auto p-16 bg-gray-100 dark:bg-gray-900 flex justify-center items-start relative">
+                {isOptimizing && (
+                    <div className="absolute inset-0 z-50 bg-background/50 backdrop-blur-sm flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-sm font-medium text-primary">Optimizing Resume...</p>
+                        </div>
+                    </div>
+                )}
                 <style type="text/css" media="print">
                     {pageStyle}
                 </style>

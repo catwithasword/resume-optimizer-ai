@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,15 +13,21 @@ export function AiOptimizer() {
     const jobDescription = useResumeStore((state) => state.jobDescription);
     const optimizationResult = useResumeStore((state) => state.optimizationResult);
     const setOptimizationResult = useResumeStore((state) => state.setOptimizationResult);
-    const [isOptimizing, setIsOptimizing] = useState(false);
+    const isOptimizing = useResumeStore((state) => state.isOptimizing);
+    const setIsOptimizing = useResumeStore((state) => state.setIsOptimizing);
+
+    const setResumeData = useResumeStore((state) => state.setResumeData);
 
     const handleOptimize = async () => {
         if (!resumeData || !jobDescription) return;
 
         setIsOptimizing(true);
         try {
-            const result = await api.optimizeResume(resumeData, jobDescription);
-            setOptimizationResult(result);
+            const updatedResume = await api.optimizeResume(resumeData, jobDescription);
+            setResumeData(updatedResume);
+            // We use optimizationResult just to show success state for now
+            // In a real refactor we might want to change this state variable name or logic
+            setOptimizationResult({ score: 100, suggestions: [], improvedSummary: "Optimized" });
         } catch (error) {
             console.error(error);
         } finally {
@@ -45,52 +51,52 @@ export function AiOptimizer() {
                 </CardHeader>
                 <CardContent>
                     {!optimizationResult ? (
-                        <Button
-                            onClick={handleOptimize}
-                            disabled={isOptimizing || !jobDescription}
-                            className="w-full"
-                        >
-                            {isOptimizing ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Optimizing...
-                                </>
-                            ) : (
-                                "Optimize Resume"
-                            )}
-                        </Button>
+                        <>
+                            <div className="space-y-4">
+                                <Button
+                                    onClick={handleOptimize}
+                                    disabled={isOptimizing || !jobDescription}
+                                    className="w-full"
+                                >
+                                    {isOptimizing ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Optimizing...
+                                        </>
+                                    ) : (
+                                        "Optimize Resume"
+                                    )}
+                                </Button>
+                                <p className="text-xs text-muted-foreground text-center">
+                                    This will update your resume content to better match the job description.
+                                </p>
+                            </div>
+                        </>
                     ) : (
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h4 className="font-semibold">Optimization Score</h4>
-                                <Badge variant={optimizationResult.score > 80 ? "default" : "secondary"} className="text-lg px-3 py-1">
-                                    {optimizationResult.score}/100
-                                </Badge>
+                            <div className="flex items-center gap-2 text-green-600 justify-center p-4 bg-green-50 rounded-lg">
+                                <CheckCircle2 className="h-6 w-6" />
+                                <span className="font-semibold">Resume Optimized Successfully!</span>
                             </div>
 
-                            <div className="space-y-2">
-                                <h4 className="font-semibold text-sm">Suggestions</h4>
-                                <ul className="space-y-2">
-                                    {optimizationResult.suggestions.map((suggestion, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                            <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                                            <span>{suggestion}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                            <p className="text-sm text-center text-muted-foreground">
+                                Your resume has been updated with tailored content based on the job description.
+                            </p>
 
-                            {optimizationResult.improvedSummary && (
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold text-sm">Improved Summary</h4>
-                                    <div className="bg-muted p-3 rounded-md text-sm italic">
-                                        "{optimizationResult.improvedSummary}"
-                                    </div>
-                                </div>
-                            )}
-
-                            <Button onClick={handleOptimize} variant="outline" className="w-full mt-2">
-                                Re-optimize
+                            <Button
+                                onClick={handleOptimize}
+                                variant="outline"
+                                className="w-full mt-2"
+                                disabled={isOptimizing}
+                            >
+                                {isOptimizing ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Optimizing...
+                                    </>
+                                ) : (
+                                    "Re-optimize"
+                                )}
                             </Button>
                         </div>
                     )}
