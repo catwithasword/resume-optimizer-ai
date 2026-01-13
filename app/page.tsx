@@ -40,7 +40,7 @@ export default function LandingPage() {
           <div className="bg-primary text-primary-foreground rounded-md p-1">
             <SiReactiveresume className="h-5 w-5" />
           </div>
-          ResumeOptimizer
+          Resume Optimizer
         </div>
         <nav className="ml-auto flex gap-4">
           {resumeData && (

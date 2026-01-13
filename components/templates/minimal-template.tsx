@@ -39,11 +39,14 @@ export function MinimalTemplate({ resumeData, layout }: TemplateProps) {
         <div
             className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] text-gray-800 font-sans box-border resume-document relative z-10 print:bg-white"
             style={{
+                width: '210mm',
+                height: '297mm',
+                overflow: 'visible',
                 pageBreakAfter: 'auto',
                 padding: `${layout?.margin || 20}mm`,
                 fontSize: `${((layout?.fontScale || 100) / 100) * 10}pt`, // Base 10pt at 100%
                 lineHeight: layout?.lineHeight || 1.4,
-                backgroundColor: 'white',
+                backgroundColor: 'transparent',
             }}
         >
             {/* Header - Centered */}

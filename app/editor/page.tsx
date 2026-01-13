@@ -22,7 +22,7 @@ export default function EditorPage() {
                         <div className="bg-primary text-primary-foreground rounded-md p-1">
                             <Zap className="h-4 w-4" />
                         </div>
-                        ResumeOptimizer <span className="text-muted-foreground font-normal">/ Editor</span>
+                        Resume Optimizer <span className="text-muted-foreground font-normal">/ Editor</span>
                     </div>
                 </div>
 

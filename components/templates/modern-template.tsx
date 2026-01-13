@@ -41,14 +41,20 @@ export function ModernTemplate({ resumeData, layout }: TemplateProps) {
         <div
             className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] text-slate-800 font-sans box-border resume-document relative z-10 print:bg-white grid grid-cols-[1fr_2fr]"
             style={{
+                width: '210mm',
+                height: '297mm',
+                overflow: 'visible',
                 pageBreakAfter: 'auto',
                 fontSize: `${((layout?.fontScale || 100) / 100) * 11}pt`, // Base 11pt at 100% for Modern
                 lineHeight: layout?.lineHeight || 1.2,
-                backgroundColor: 'white',
+                backgroundColor: 'transparent',
             }}
         >
-            {/* Left Sidebar */}
-            <div className="bg-slate-100 p-6 flex flex-col gap-6 border-r border-slate-200 text-[0.9em]">
+            {/* Absolute Background for Sidebar - Strictly A4 Height */}
+            <div className="absolute left-0 top-0 bottom-0 w-[33.333333%] bg-slate-100 border-r border-slate-200 -z-10" />
+
+            {/* Left Sidebar Content */}
+            <div className="p-6 flex flex-col gap-6 text-[0.9em] h-full">
                 {/* Contact */}
                 <div className="space-y-3">
                     <h3 className="font-bold uppercase tracking-wider text-slate-900 border-b-2 border-slate-300 pb-1 mb-2">Contact</h3>

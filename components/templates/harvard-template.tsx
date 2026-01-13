@@ -41,6 +41,8 @@ export function HarvardTemplate({ resumeData, layout }: TemplateProps) {
         <div
             className="w-[210mm] min-w-[210mm] shrink-0 min-h-[297mm] text-black font-serif box-border resume-document relative z-10 print:bg-white"
             style={{
+                height: '297mm',
+                overflow: 'visible',
                 pageBreakAfter: 'auto',
                 padding: `${layout?.margin || 15}mm`,
                 fontSize: `${((layout?.fontScale || 100) / 100) * 10}pt`, // Base 10pt at 100%
