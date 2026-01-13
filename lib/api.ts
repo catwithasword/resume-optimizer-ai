@@ -36,13 +36,15 @@ const MOCK_OPTIMIZATION_RESULT: OptimizationResult = {
     improvedSummary: "Result-oriented Senior Frontend Developer with 4+ years of experience in building scalable web applications using React and Next.js. Proven track record of leading teams and optimizing performance."
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export const api = {
     uploadResume: async (file: File): Promise<ResumeData> => {
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            const response = await fetch('https://4c9826f14456.ngrok-free.app/upload', {
+            const response = await fetch(`${API_URL}/upload`, {
                 method: 'POST',
                 body: formData,
             });
@@ -75,7 +77,7 @@ export const api = {
         };
 
         try {
-            const response = await fetch('https://4c9826f14456.ngrok-free.app/resume_refine', {
+            const response = await fetch(`${API_URL}/resume_refine`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
