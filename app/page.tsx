@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { FileUpload } from '@/components/file-upload';
-import { CheckCircle, Zap } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
+import { SiReactiveresume } from "react-icons/si";
 import { useResumeStore } from '@/lib/store';
 import { useEffect } from 'react';
 
@@ -37,7 +38,7 @@ export default function LandingPage() {
       <header className="px-6 h-16 flex items-center border-b">
         <div className="font-bold text-xl flex items-center gap-2">
           <div className="bg-primary text-primary-foreground rounded-md p-1">
-            <Zap className="h-5 w-5" />
+            <SiReactiveresume className="h-5 w-5" />
           </div>
           ResumeOptimizer
         </div>
