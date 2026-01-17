@@ -91,10 +91,6 @@ export default function LandingPage() {
                 <p className="font-semibold">{showContinueEditing ? "Or start over" : "Get Started"}</p>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    {/* Proxy click to FileUpload input if possible, but FileUpload component encapsulates it. 
-                                 Actually, standard FileUpload component is better used directly. 
-                                 Let's keep the existing FileUpload and add a button below/beside it.
-                             */}
                     <FileUpload className="w-full" />
                   </div>
                   <div className="border rounded-lg p-6 flex flex-col items-center justify-center gap-4 hover:bg-muted/50 transition-colors shadow-sm">
