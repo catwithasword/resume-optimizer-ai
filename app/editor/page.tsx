@@ -1,7 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, Zap } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { SiReactiveresume } from "react-icons/si";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResumeForm } from '@/components/resume-form';
@@ -20,7 +21,7 @@ export default function EditorPage() {
                     </Button>
                     <div className="font-semibold flex items-center gap-2">
                         <div className="bg-primary text-primary-foreground rounded-md p-1">
-                            <Zap className="h-4 w-4" />
+                            <SiReactiveresume size={20} />
                         </div>
                         Resume Optimizer <span className="text-muted-foreground font-normal">/ Editor</span>
                     </div>
